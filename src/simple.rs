@@ -1,11 +1,11 @@
 use crate::{
-    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, UnorientedUnitQuad, Voxel, VoxelVisibility,
+    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, UnorientedUnitQuad,
+    Voxel, VoxelVisibility,
 };
 
 use ilattice::glam::UVec3;
 use ilattice::prelude::Extent;
 use ndshape::Shape;
-
 
 /// A fast and simple meshing algorithm that produces a single quad for every visible face of a block.
 ///
@@ -21,11 +21,38 @@ pub fn visible_block_faces<T, S>(
     T: Voxel,
     S: Shape<3, Coord = u32>,
 {
-    visible_block_faces_with_voxel_view::<_, IdentityVoxel<T>, _>(
+    assert_in_bounds(voxels, voxels_shape, min, max);
+
+    let min = UVec3::from(min).as_ivec3();
+    let max = UVec3::from(max).as_ivec3();
+    let extent = Extent::from_min_and_max(min, max);
+    let interior = extent.padded(-1); // Avoid accessing out of bounds with a 3x3x3 kernel.
+    let interior =
+        Extent::from_min_and_shape(interior.minimum.as_uvec3(), interior.shape.as_uvec3());
+    visible_block_faces_with_voxel_view::<_, IdentityVoxel<T>, _, _>(
         voxels,
         voxels_shape,
-        min,
-        max,
+        interior.iter3(),
+        faces,
+        output,
+    )
+}
+
+pub fn visible_block_faces_with_specified<T, S, I>(
+    voxels: &[T],
+    voxels_shape: &S,
+    interior: I,
+    faces: &[OrientedBlockFace; 6],
+    output: &mut UnitQuadBuffer,
+) where
+    T: Voxel,
+    S: Shape<3, Coord = u32>,
+    I: Iterator<Item = UVec3>,
+{
+    visible_block_faces_with_voxel_view::<_, IdentityVoxel<T>, _, _>(
+        voxels,
+        voxels_shape,
+        interior,
         faces,
         output,
     )
@@ -35,30 +62,21 @@ pub fn visible_block_faces<T, S>(
 /// with the additional ability to interpret the array as some other type.
 /// Use this if you want to mesh the same array multiple times
 /// with different sets of voxels being visible.
-pub fn visible_block_faces_with_voxel_view<'a, T, V, S>(
+pub fn visible_block_faces_with_voxel_view<'a, T, V, S, I>(
     voxels: &'a [T],
     voxels_shape: &S,
-    min: [u32; 3],
-    max: [u32; 3],
+    interior: I,
     faces: &[OrientedBlockFace; 6],
     output: &mut UnitQuadBuffer,
 ) where
     V: Voxel + From<&'a T>,
     S: Shape<3, Coord = u32>,
+    I: Iterator<Item = UVec3>,
 {
-    assert_in_bounds(voxels, voxels_shape, min, max);
-
-    let min = UVec3::from(min).as_ivec3();
-    let max = UVec3::from(max).as_ivec3();
-    let extent = Extent::from_min_and_max(min, max);
-    let interior = extent.padded(-1); // Avoid accessing out of bounds with a 3x3x3 kernel.
-    let interior =
-        Extent::from_min_and_shape(interior.minimum.as_uvec3(), interior.shape.as_uvec3());
-
     let kernel_strides =
         faces.map(|face| voxels_shape.linearize(face.signed_normal().as_uvec3().to_array()));
 
-    for p in interior.iter3() {
+    for p in interior {
         let p_array = p.to_array();
         let p_index = voxels_shape.linearize(p_array);
         let p_voxel = V::from(unsafe { voxels.get_unchecked(p_index as usize) });
@@ -88,6 +106,8 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S>(
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Debug;
+
     use super::*;
     use crate::RIGHT_HANDED_Y_UP_CONFIG;
     use ndshape::{ConstShape, ConstShape3u32};
@@ -122,10 +142,34 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_simple_() {
+        type MyShape = ConstShape3u32<5, 5, 5>;
+        let my_shape = MyShape {};
+        let mut samples = [BoolVoxel(false); MyShape::SIZE as usize];
+        samples[my_shape.linearize([1, 1, 1]) as usize] = BoolVoxel(true);
+        samples[my_shape.linearize([2, 1, 1]) as usize] = BoolVoxel(true);
+        samples[my_shape.linearize([3, 1, 1]) as usize] = BoolVoxel(true);
+        samples[my_shape.linearize([2, 2, 2]) as usize] = BoolVoxel(true);
+        samples[my_shape.linearize([3, 3, 3]) as usize] = BoolVoxel(true);
+        let mut buffer = UnitQuadBuffer::new();
+        visible_block_faces(
+            &samples,
+            &my_shape,
+            [0, 0, 0],
+            [4, 4, 4],
+            &RIGHT_HANDED_Y_UP_CONFIG.faces,
+            &mut buffer,
+        );
+        for group in buffer.groups {
+            println!("group {:?}", group);
+        }
+    }
+
     type SampleShape = ConstShape3u32<34, 34, 34>;
 
     /// Basic voxel type with one byte of texture layers
-    #[derive(Default, Clone, Copy, Eq, PartialEq)]
+    #[derive(Default, Clone, Copy, Eq, PartialEq, Debug)]
     struct BoolVoxel(bool);
 
     const EMPTY: BoolVoxel = BoolVoxel(false);
@@ -139,5 +183,4 @@ mod tests {
             }
         }
     }
-
 }

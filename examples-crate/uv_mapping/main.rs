@@ -32,10 +32,13 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_state::<AppState>()
-        .add_system(load_assets.in_schedule(OnEnter(AppState::Loading)))
-        .add_system(check_loaded.in_set(OnUpdate(AppState::Loading)))
-        .add_system(setup.in_schedule(OnEnter(AppState::Run)))
-        .add_system(camera_rotation_system.in_set(OnUpdate(AppState::Run)))
+        .add_systems(OnEnter(AppState::Loading), load_assets)
+        .add_systems(Update, check_loaded.run_if(in_state(AppState::Loading)))
+        .add_systems(OnEnter(AppState::Run), setup)
+        .add_systems(
+            Update,
+            camera_rotation_system.run_if(in_state(AppState::Run)),
+        )
         .run();
 }
 
@@ -92,7 +95,7 @@ fn setup(
     mut textures: ResMut<Assets<Image>>,
 ) {
     debug!("setup");
-    let mut texture = textures.get_mut(&texture_handle.0).unwrap();
+    let texture = textures.get_mut(&texture_handle.0).unwrap();
 
     // Set the texture to tile over the entire quad
     texture.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {

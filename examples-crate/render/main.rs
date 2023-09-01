@@ -25,8 +25,8 @@ fn main() {
                 ..Default::default()
             },
         }))
-        .add_plugin(WireframePlugin)
-        .add_startup_system(setup)
+        .add_plugins(WireframePlugin)
+        .add_systems(Startup, setup)
         .run();
 }
 

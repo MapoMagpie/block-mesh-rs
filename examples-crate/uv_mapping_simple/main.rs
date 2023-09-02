@@ -5,7 +5,8 @@ use bevy::render::render_resource::{AddressMode, PrimitiveTopology, SamplerDescr
 use bevy::render::texture::ImageSampler;
 use block_mesh::ndshape::{ConstShape, ConstShape3u32};
 use block_mesh::{
-    greedy_quads, GreedyQuadsBuffer, MergeVoxel, Voxel, VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
+    visible_block_faces_with_specified, MergeVoxel, UnitQuadBuffer, Voxel, VoxelVisibility,
+    RIGHT_HANDED_Y_UP_CONFIG,
 };
 
 #[derive(Default, Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -108,41 +109,46 @@ fn setup(
 
     // Just a solid cube of voxels. We only fill the interior since we need some empty voxels to form a boundary for the mesh.
     let mut voxels = [BoolVoxel(false); SampleShape::SIZE as usize];
+    let mut positions = Vec::new();
     for z in 1..21 {
         for y in 1..21 {
             for x in 1..21 {
                 let i = SampleShape::linearize([x, y, z]);
                 voxels[i as usize] = BoolVoxel(true);
+                // Intentionally making voxels and positions inconsistent.
+                if (y == 1 || 20 == y) && ((x == 6 || x == 14) || (z == 6 || z == 14)) {
+                    continue;
+                }
+                positions.push(UVec3::from_array([x, y, z]));
             }
         }
     }
 
     let faces = RIGHT_HANDED_Y_UP_CONFIG.faces;
 
-    let mut buffer = GreedyQuadsBuffer::new(voxels.len());
-    greedy_quads(
+    let mut buffer = UnitQuadBuffer::new();
+    visible_block_faces_with_specified(
         &voxels,
         &SampleShape {},
-        [0; 3],
-        [21; 3],
+        positions.into_iter(),
         &faces,
         &mut buffer,
     );
-    let num_indices = buffer.quads.num_quads() * 6;
-    let num_vertices = buffer.quads.num_quads() * 4;
+    let num_indices = buffer.groups.len() * 6;
+    let num_vertices = buffer.groups.len() * 4;
     let mut indices = Vec::with_capacity(num_indices);
     let mut positions = Vec::with_capacity(num_vertices);
     let mut normals = Vec::with_capacity(num_vertices);
     let mut tex_coords = Vec::with_capacity(num_vertices);
-    for (group, face) in buffer.quads.groups.into_iter().zip(faces.into_iter()) {
+    for (group, face) in buffer.groups.into_iter().zip(faces.into_iter()) {
         for quad in group.into_iter() {
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
-            positions.extend_from_slice(&face.quad_mesh_positions(&quad, 1.0));
+            positions.extend_from_slice(&face.quad_mesh_positions(&quad.into(), 1.0));
             normals.extend_from_slice(&face.quad_mesh_normals());
             tex_coords.extend_from_slice(&face.tex_coords(
                 RIGHT_HANDED_Y_UP_CONFIG.u_flip_face,
-                true,
-                &quad,
+                false,
+                &quad.into(),
             ));
         }
     }

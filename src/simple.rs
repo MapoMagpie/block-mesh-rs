@@ -47,7 +47,7 @@ pub fn visible_block_faces_with_specified<T, S, I>(
 ) where
     T: Voxel,
     S: Shape<3, Coord = u32>,
-    I: Iterator<Item = UVec3>,
+    I: IntoIterator<Item = UVec3>,
 {
     visible_block_faces_with_voxel_view::<_, IdentityVoxel<T>, _, _>(
         voxels,
@@ -71,7 +71,7 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S, I>(
 ) where
     V: Voxel + From<&'a T>,
     S: Shape<3, Coord = u32>,
-    I: Iterator<Item = UVec3>,
+    I: IntoIterator<Item = UVec3>,
 {
     let kernel_strides =
         faces.map(|face| voxels_shape.linearize(face.signed_normal().as_uvec3().to_array()));

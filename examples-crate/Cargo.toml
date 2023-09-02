@@ -21,3 +21,7 @@ path = "render/main.rs"
 [[example]]
 name = "uv_mapping"
 path = "uv_mapping/main.rs"
+
+[[example]]
+name = "uv_mapping_simple"
+path = "uv_mapping_simple/main.rs"

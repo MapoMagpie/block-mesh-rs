@@ -176,7 +176,13 @@ fn setup(
         },
         ..Default::default()
     });
-    let camera = commands.spawn(Camera3dBundle::default()).id();
+    let camera = commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_translation(Vec3::splat(30.))
+                .looking_at(Vec3::splat(0.0), Vec3::Y),
+            ..Default::default()
+        })
+        .id();
 
     commands.insert_resource(CameraRotationState::new(camera));
 }
@@ -197,16 +203,11 @@ fn camera_rotation_system(
     time: Res<Time>,
     mut transforms: Query<&mut Transform>,
 ) {
-    let t = 0.3 * time.elapsed_seconds();
-
-    let target = Vec3::new(0.0, 0.0, 0.0);
-    let height = 30.0 * (2.0 * t).sin();
-    let radius = 50.0;
-    let x = radius * t.cos();
-    let z = radius * t.sin();
-    let eye = Vec3::new(x, height, z);
-    let new_transform = Mat4::look_at_rh(eye, target, Vec3::Y);
-
+    let radians = time.elapsed_seconds() * 0.3;
+    let rotate = Mat4::from_rotation_y(radians);
     let mut cam_tfm = transforms.get_mut(state.camera).unwrap();
-    *cam_tfm = Transform::from_matrix(new_transform);
+    cam_tfm.rotate_local_y(radians);
+    let y = radians.sin() * 30.0;
+    let eye = rotate * Mat4::from_translation(Vec3::new(50., y, 50.0));
+    *cam_tfm = Transform::from_matrix(eye).looking_at(Vec3::splat(0.0), Vec3::Y);
 }

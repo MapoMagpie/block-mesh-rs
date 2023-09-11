@@ -98,7 +98,9 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S, I>(
             };
 
             if face_needs_mesh {
-                output.groups[face_index].push(UnorientedUnitQuad { minimum: p_array });
+                output.groups[face_index].push(UnorientedUnitQuad {
+                    minimum: p.as_ivec3().to_array(),
+                });
             }
         }
     }
@@ -144,9 +146,18 @@ mod tests {
 
     #[test]
     fn test_simple_() {
-        type MyShape = ConstShape3u32<5, 5, 5>;
+        type MyShape = ConstShape3u32<64, 64, 64>;
         let my_shape = MyShape {};
         let mut samples = [BoolVoxel(false); MyShape::SIZE as usize];
+        println!("samples len {}", samples.len());
+        let faces = RIGHT_HANDED_Y_UP_CONFIG.faces;
+        for face in faces.iter() {
+            println!(
+                "face: {:?}, \nface signed normal: {:?}",
+                face,
+                face.signed_normal()
+            );
+        }
         samples[my_shape.linearize([1, 1, 1]) as usize] = BoolVoxel(true);
         samples[my_shape.linearize([2, 1, 1]) as usize] = BoolVoxel(true);
         samples[my_shape.linearize([3, 1, 1]) as usize] = BoolVoxel(true);
@@ -158,7 +169,7 @@ mod tests {
             &my_shape,
             [0, 0, 0],
             [4, 4, 4],
-            &RIGHT_HANDED_Y_UP_CONFIG.faces,
+            &faces,
             &mut buffer,
         );
         for group in buffer.groups {

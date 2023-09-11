@@ -3,8 +3,7 @@ use bevy::render::RenderPlugin;
 use block_mesh::ilattice::glam::Vec3A;
 use block_mesh::ndshape::{ConstShape, ConstShape3u32};
 use block_mesh::{
-    greedy_quads, visible_block_faces, GreedyQuadsBuffer, MergeVoxel, UnitQuadBuffer, Voxel,
-    VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
+    visible_block_faces, UnitQuadBuffer, Voxel, VoxelVisibility, RIGHT_HANDED_Y_UP_CONFIG,
 };
 
 use bevy::{
@@ -54,19 +53,12 @@ fn setup(
     });
 
     let simple_sphere_mesh = generate_simple_mesh(&mut meshes, |p| sphere(0.9, p));
-    let greedy_sphere_mesh = generate_greedy_mesh(&mut meshes, |p| sphere(0.9, p));
 
     spawn_pbr(
         &mut commands,
         &mut materials,
         simple_sphere_mesh,
         Transform::from_translation(Vec3::new(8.0, -16.0, -16.0)),
-    );
-    spawn_pbr(
-        &mut commands,
-        &mut materials,
-        greedy_sphere_mesh,
-        Transform::from_translation(Vec3::new(-16.0, -16.0, 8.0)),
     );
 }
 
@@ -102,60 +94,6 @@ fn generate_simple_mesh(
         for quad in group.into_iter() {
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(&face.quad_mesh_positions(&quad.into(), 1.0));
-            normals.extend_from_slice(&face.quad_mesh_normals());
-        }
-    }
-
-    let mut render_mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    render_mesh.insert_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-        VertexAttributeValues::Float32x3(positions),
-    );
-    render_mesh.insert_attribute(
-        Mesh::ATTRIBUTE_NORMAL,
-        VertexAttributeValues::Float32x3(normals),
-    );
-    render_mesh.insert_attribute(
-        Mesh::ATTRIBUTE_UV_0,
-        VertexAttributeValues::Float32x2(vec![[0.0; 2]; num_vertices]),
-    );
-    render_mesh.set_indices(Some(Indices::U32(indices.clone())));
-
-    meshes.add(render_mesh)
-}
-
-fn generate_greedy_mesh(
-    meshes: &mut Assets<Mesh>,
-    sdf: impl Fn(Vec3A) -> BoolVoxel,
-) -> Handle<Mesh> {
-    type SampleShape = ConstShape3u32<34, 34, 34>;
-
-    let mut samples = [EMPTY; SampleShape::SIZE as usize];
-    for i in 0u32..(SampleShape::SIZE) {
-        let p = into_domain(32, SampleShape::delinearize(i));
-        samples[i as usize] = sdf(p);
-    }
-
-    let faces = RIGHT_HANDED_Y_UP_CONFIG.faces;
-
-    let mut buffer = GreedyQuadsBuffer::new(samples.len());
-    greedy_quads(
-        &samples,
-        &SampleShape {},
-        [0; 3],
-        [33; 3],
-        &faces,
-        &mut buffer,
-    );
-    let num_indices = buffer.quads.num_quads() * 6;
-    let num_vertices = buffer.quads.num_quads() * 4;
-    let mut indices = Vec::with_capacity(num_indices);
-    let mut positions = Vec::with_capacity(num_vertices);
-    let mut normals = Vec::with_capacity(num_vertices);
-    for (group, face) in buffer.quads.groups.into_iter().zip(faces.into_iter()) {
-        for quad in group.into_iter() {
-            indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
-            positions.extend_from_slice(&face.quad_mesh_positions(&quad, 1.0));
             normals.extend_from_slice(&face.quad_mesh_normals());
         }
     }
@@ -215,18 +153,5 @@ impl Voxel for BoolVoxel {
         } else {
             VoxelVisibility::Opaque
         }
-    }
-}
-
-impl MergeVoxel for BoolVoxel {
-    type MergeValue = Self;
-    type MergeValueFacingNeighbour = Self;
-
-    fn merge_value(&self) -> Self::MergeValue {
-        *self
-    }
-
-    fn merge_value_facing_neighbour(&self) -> Self::MergeValueFacingNeighbour {
-        *self
     }
 }

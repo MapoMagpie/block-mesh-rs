@@ -39,12 +39,12 @@ impl OrientedBlockFace {
             AxisPermutation::even_with_normal_axis(normal.unsigned_axis()),
         )
     }
-    
+
     #[inline]
     pub fn n_sign(&self) -> i32 {
         self.n_sign
     }
-    
+
     #[inline]
     pub fn permutation(&self) -> AxisPermutation {
         self.permutation
@@ -73,14 +73,14 @@ impl OrientedBlockFace {
     /// Note that this is natural when UV coordinates have (0,0) at the bottom
     /// left, but when (0,0) is at the top left, V must be flipped.
     #[inline]
-    pub fn quad_corners(&self, quad: &UnorientedQuad) -> [UVec3; 4] {
-        let w_vec = self.u * quad.width;
-        let h_vec = self.v * quad.height;
+    pub fn quad_corners(&self, quad: &UnorientedQuad) -> [IVec3; 4] {
+        let w_vec = (self.u * quad.width).as_ivec3();
+        let h_vec = (self.v * quad.height).as_ivec3();
 
         let minu_minv = if self.n_sign > 0 {
-            UVec3::from(quad.minimum) + self.n
+            IVec3::from(quad.minimum) + self.n.as_ivec3()
         } else {
-            UVec3::from(quad.minimum)
+            IVec3::from(quad.minimum)
         };
         let maxu_minv = minu_minv + w_vec;
         let minu_maxv = minu_minv + h_vec;

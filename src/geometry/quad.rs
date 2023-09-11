@@ -7,7 +7,7 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct UnorientedQuad {
     /// The minimum voxel in the quad.
-    pub minimum: [u32; 3],
+    pub minimum: [i32; 3],
     /// Width of the quad.
     pub width: u32,
     /// Height of the quad.
@@ -31,5 +31,5 @@ impl From<UnorientedUnitQuad> for UnorientedQuad {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct UnorientedUnitQuad {
     /// The minimum voxel in the quad.
-    pub minimum: [u32; 3],
+    pub minimum: [i32; 3],
 }

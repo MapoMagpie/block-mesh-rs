@@ -1,6 +1,7 @@
+use crate::UnorientedQuad;
 use crate::{
-    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, UnorientedUnitQuad,
-    Voxel, VoxelVisibility,
+    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, Voxel,
+    VoxelVisibility,
 };
 
 use ilattice::glam::UVec3;
@@ -98,9 +99,8 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S, I>(
             };
 
             if face_needs_mesh {
-                output.groups[face_index].push(UnorientedUnitQuad {
-                    minimum: p.as_ivec3().to_array(),
-                });
+                output.groups[face_index]
+                    .push(UnorientedQuad::from_minimum(p.as_vec3().to_array()));
             }
         }
     }

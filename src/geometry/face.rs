@@ -1,6 +1,6 @@
 use crate::{Axis, AxisPermutation, SignedAxis, UnorientedQuad};
 
-use ilattice::glam::{IVec3, UVec3};
+use ilattice::glam::{IVec3, UVec3, Vec3};
 
 /// Metadata that's used to aid in the geometric calculations for one of the 6 possible cube faces.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,14 +73,14 @@ impl OrientedBlockFace {
     /// Note that this is natural when UV coordinates have (0,0) at the bottom
     /// left, but when (0,0) is at the top left, V must be flipped.
     #[inline]
-    pub fn quad_corners(&self, quad: &UnorientedQuad) -> [IVec3; 4] {
-        let w_vec = (self.u * quad.width).as_ivec3();
-        let h_vec = (self.v * quad.height).as_ivec3();
+    pub fn quad_corners(&self, quad: &UnorientedQuad) -> [Vec3; 4] {
+        let w_vec = self.u.as_vec3() * quad.width;
+        let h_vec = self.v.as_vec3() * quad.height;
 
         let minu_minv = if self.n_sign > 0 {
-            IVec3::from(quad.minimum) + self.n.as_ivec3()
+            Vec3::from(quad.minimum) + self.n.as_vec3()
         } else {
-            IVec3::from(quad.minimum)
+            Vec3::from(quad.minimum)
         };
         let maxu_minv = minu_minv + w_vec;
         let minu_maxv = minu_minv + h_vec;
@@ -91,8 +91,7 @@ impl OrientedBlockFace {
 
     #[inline]
     pub fn quad_mesh_positions(&self, quad: &UnorientedQuad, voxel_size: f32) -> [[f32; 3]; 4] {
-        self.quad_corners(quad)
-            .map(|c| (voxel_size * c.as_vec3()).to_array())
+        self.quad_corners(quad).map(|c| (voxel_size * c).to_array())
     }
 
     #[inline]
@@ -143,26 +142,26 @@ impl OrientedBlockFace {
         match (flip_u, flip_v) {
             (false, false) => [
                 [0.0, 0.0],
-                [quad.width as f32, 0.0],
-                [0.0, quad.height as f32],
-                [quad.width as f32, quad.height as f32],
+                [quad.width, 0.0],
+                [0.0, quad.height],
+                [quad.width, quad.height],
             ],
             (true, false) => [
-                [quad.width as f32, 0.0],
+                [quad.width, 0.0],
                 [0.0, 0.0],
-                [quad.width as f32, quad.height as f32],
-                [0.0, quad.height as f32],
+                [quad.width, quad.height],
+                [0.0, quad.height],
             ],
             (false, true) => [
-                [0.0, quad.height as f32],
-                [quad.width as f32, quad.height as f32],
+                [0.0, quad.height],
+                [quad.width, quad.height],
                 [0.0, 0.0],
-                [quad.width as f32, 0.0],
+                [quad.width, 0.0],
             ],
             (true, true) => [
-                [quad.width as f32, quad.height as f32],
-                [0.0, quad.height as f32],
-                [quad.width as f32, 0.0],
+                [quad.width, quad.height],
+                [0.0, quad.height],
+                [quad.width, 0.0],
                 [0.0, 0.0],
             ],
         }

@@ -4,32 +4,29 @@
 /// When using these values for materials and lighting, you can access them
 /// using either the quad's minimum voxel coordinates or the vertex coordinates
 /// given by `OrientedBlockFace::quad_corners`.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub struct UnorientedQuad {
     /// The minimum voxel in the quad.
-    pub minimum: [i32; 3],
+    pub minimum: [f32; 3],
     /// Width of the quad.
-    pub width: u32,
+    pub width: f32,
     /// Height of the quad.
-    pub height: u32,
+    pub height: f32,
 }
 
-impl From<UnorientedUnitQuad> for UnorientedQuad {
-    #[inline]
-    fn from(unit: UnorientedUnitQuad) -> Self {
+impl UnorientedQuad {
+    pub fn new(minimum: [f32; 3], width: f32, height: f32) -> Self {
         Self {
-            minimum: unit.minimum,
-            width: 1,
-            height: 1,
+            minimum,
+            width,
+            height,
         }
     }
-}
-
-/// A quad covering a single voxel (just a single block face), without an
-/// orientation. To get the actual corners of the quad, combine with an
-/// [`OrientedBlockFace`].
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct UnorientedUnitQuad {
-    /// The minimum voxel in the quad.
-    pub minimum: [i32; 3],
+    pub fn from_minimum(minimum: [f32; 3]) -> Self {
+        Self {
+            minimum,
+            width: 1.0,
+            height: 1.0,
+        }
+    }
 }

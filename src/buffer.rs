@@ -1,4 +1,4 @@
-use crate::{UnorientedQuad, UnorientedUnitQuad};
+use crate::UnorientedQuad;
 
 #[derive(Default)]
 pub struct QuadBuffer {
@@ -37,12 +37,12 @@ pub struct UnitQuadBuffer {
     /// When using these values for materials and lighting, you can access them
     /// using either the quad's minimum voxel coordinates or the vertex
     /// coordinates given by [`OrientedBlockFace::quad_corners`].
-    pub groups: [Vec<UnorientedUnitQuad>; 6],
+    pub groups: [Vec<UnorientedQuad>; 6],
 }
 
 impl UnitQuadBuffer {
     pub fn new() -> Self {
-        const EMPTY: Vec<UnorientedUnitQuad> = Vec::new();
+        const EMPTY: Vec<UnorientedQuad> = Vec::new();
         Self { groups: [EMPTY; 6] }
     }
 

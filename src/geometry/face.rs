@@ -1,4 +1,4 @@
-use crate::{Axis, AxisPermutation, SignedAxis, UnorientedQuad};
+use crate::{Axis, AxisPermutation, Quad, SignedAxis, UnorientedQuad};
 
 use ilattice::glam::{IVec3, UVec3, Vec3};
 
@@ -73,14 +73,17 @@ impl OrientedBlockFace {
     /// Note that this is natural when UV coordinates have (0,0) at the bottom
     /// left, but when (0,0) is at the top left, V must be flipped.
     #[inline]
-    pub fn quad_corners(&self, quad: &UnorientedQuad) -> [Vec3; 4] {
-        let w_vec = self.u.as_vec3() * quad.width;
-        let h_vec = self.v.as_vec3() * quad.height;
+    pub fn quad_corners<Q>(&self, quad: &Q) -> [Vec3; 4]
+    where
+        Q: Quad,
+    {
+        let w_vec = self.u.as_vec3() * quad.width();
+        let h_vec = self.v.as_vec3() * quad.height();
 
         let minu_minv = if self.n_sign > 0 {
-            Vec3::from(quad.minimum) + self.n.as_vec3()
+            Vec3::from(quad.minimum()) + self.n.as_vec3()
         } else {
-            Vec3::from(quad.minimum)
+            Vec3::from(quad.minimum())
         };
         let maxu_minv = minu_minv + w_vec;
         let minu_maxv = minu_minv + h_vec;
@@ -126,12 +129,10 @@ impl OrientedBlockFace {
     /// If you need to use a texture atlas, you must calculate your own
     /// coordinates from the `Quad`.
     #[inline]
-    pub fn tex_coords(
-        &self,
-        u_flip_face: Axis,
-        flip_v: bool,
-        quad: &UnorientedQuad,
-    ) -> [[f32; 2]; 4] {
+    pub fn tex_coords<Q>(&self, u_flip_face: Axis, flip_v: bool, quad: &Q) -> [[f32; 2]; 4]
+    where
+        Q: Quad,
+    {
         let face_normal_axis = self.permutation.axes()[0];
         let flip_u = if self.n_sign < 0 {
             u_flip_face != face_normal_axis
@@ -142,26 +143,26 @@ impl OrientedBlockFace {
         match (flip_u, flip_v) {
             (false, false) => [
                 [0.0, 0.0],
-                [quad.width, 0.0],
-                [0.0, quad.height],
-                [quad.width, quad.height],
+                [quad.width(), 0.0],
+                [0.0, quad.height()],
+                [quad.width(), quad.height()],
             ],
             (true, false) => [
-                [quad.width, 0.0],
+                [quad.width(), 0.0],
                 [0.0, 0.0],
-                [quad.width, quad.height],
-                [0.0, quad.height],
+                [quad.width(), quad.height()],
+                [0.0, quad.height()],
             ],
             (false, true) => [
-                [0.0, quad.height],
-                [quad.width, quad.height],
+                [0.0, quad.height()],
+                [quad.width(), quad.height()],
                 [0.0, 0.0],
-                [quad.width, 0.0],
+                [quad.width(), 0.0],
             ],
             (true, true) => [
-                [quad.width, quad.height],
-                [0.0, quad.height],
-                [quad.width, 0.0],
+                [quad.width(), quad.height()],
+                [0.0, quad.height()],
+                [quad.width(), 0.0],
                 [0.0, 0.0],
             ],
         }

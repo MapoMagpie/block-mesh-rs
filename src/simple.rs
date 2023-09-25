@@ -17,7 +17,7 @@ pub fn visible_block_faces<T, S>(
     min: [u32; 3],
     max: [u32; 3],
     faces: &[OrientedBlockFace; 6],
-    output: &mut UnitQuadBuffer,
+    output: &mut UnitQuadBuffer<UnorientedQuad>,
 ) where
     T: Voxel,
     S: Shape<3, Coord = u32>,
@@ -44,7 +44,7 @@ pub fn visible_block_faces_with_specified<T, S, I>(
     voxels_shape: &S,
     interior: I,
     faces: &[OrientedBlockFace; 6],
-    output: &mut UnitQuadBuffer,
+    output: &mut UnitQuadBuffer<UnorientedQuad>,
 ) where
     T: Voxel,
     S: Shape<3, Coord = u32>,
@@ -68,7 +68,7 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S, I>(
     voxels_shape: &S,
     interior: I,
     faces: &[OrientedBlockFace; 6],
-    output: &mut UnitQuadBuffer,
+    output: &mut UnitQuadBuffer<UnorientedQuad>,
 ) where
     V: Voxel + From<&'a T>,
     S: Shape<3, Coord = u32>,

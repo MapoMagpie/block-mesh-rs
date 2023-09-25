@@ -1064,7 +1064,7 @@ checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
 name = "block-mesh"
-version = "0.2.0"
+version = "0.2.3"
 dependencies = [
  "ilattice",
  "ndcopy",

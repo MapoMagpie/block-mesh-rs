@@ -1,4 +1,4 @@
-use crate::{Axis, AxisPermutation, Quad, SignedAxis, UnorientedQuad};
+use crate::{Axis, AxisPermutation, Quad, SignedAxis};
 
 use ilattice::glam::{IVec3, UVec3, Vec3};
 
@@ -93,7 +93,10 @@ impl OrientedBlockFace {
     }
 
     #[inline]
-    pub fn quad_mesh_positions(&self, quad: &UnorientedQuad, voxel_size: f32) -> [[f32; 3]; 4] {
+    pub fn quad_mesh_positions<Q>(&self, quad: &Q, voxel_size: f32) -> [[f32; 3]; 4]
+    where
+        Q: Quad,
+    {
         self.quad_corners(quad).map(|c| (voxel_size * c).to_array())
     }
 
